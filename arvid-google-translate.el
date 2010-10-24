@@ -75,8 +75,7 @@
   (kill-buffer agt-buffer-translation)
 
   ;; Kill async buffer if it is still hanging around.
-  (when (bufferp agt-async-buffer)
-	(kill-buffer agt-async-buffer))
+  (agt-kill-async-buffer)
 
 
   ;; TODO Save custom setting target / source here instead.
@@ -92,6 +91,7 @@
   (define-key agt-mode-map "\C-c\C-s" 'agt-read-language-source)
   (define-key agt-mode-map "\C-c\C-t" 'agt-read-language-target)
   (define-key agt-mode-map "\C-c\C-w" 'agt-swap-languages)
+
   (use-local-map agt-mode-map))
 
 (defun agt-auto-update (pos end len)
@@ -214,12 +214,20 @@
 ;; http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&q=hello%20world&langpair=en%7Ci
 (defun agt-translate-async (str callback from to)
   "Returns the buffer. Need to parse json and but in translation buffer."
-  (let* ((url-request-method "GET")
-         (url (concat agt-google-translate-backend-url
-					   "?v=1.0&q=" (url-hexify-string str)
-					   "&langpair=" from "%7C" to))
-         (url-show-status nil))
+  (agt-kill-async-buffer)
+  (let ((url-request-method "GET")
+		(url (concat agt-google-translate-backend-url
+					 "?v=1.0&q=" (url-hexify-string str)
+					 "&langpair=" from "%7C" to))
+		(url-show-status nil))
     (setq agt-async-buffer (url-retrieve url 'agt-handle-response (list callback)))))
+
+(defun agt-kill-async-buffer ()
+  (when (bufferp agt-async-buffer)
+	(let ((process (get-buffer-process agt-async-buffer)))
+	  (when (processp process)
+		(kill-process process)))
+	(kill-buffer agt-async-buffer)))
 
 (defun agt-handle-response (status callback)
   ""
@@ -238,14 +246,13 @@
 				   (translatedText (cdr (assq 'translatedText
 											  (assoc 'responseData json-res))))
 				   (translatedTextDecoded (decode-entities (url-unhex-string translatedText))))
-			  (kill-buffer agt-async-buffer)
-			  (funcall callback status translatedTextDecoded))
+			  (agt-kill-async-buffer)
+  			  (funcall callback status translatedTextDecoded))
 		  (error
-		   (message "error")
 		   (print (buffer-string))
 		   (print status)
-		   (kill-buffer agt-async-buffer)
-		   (agt-quit)
+		   (agt-kill-async-buffer)
+  		   (agt-quit)
 		   )))
   	  )))
 
