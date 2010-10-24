@@ -8,6 +8,8 @@
 ;; TODO Display current language target and source language in mode line?
 ;; TODO Still trouble with encoding. "Jag het" sv -> fre "J&#39;ai chaud"
 
+;; Remove later
+(add-to-list 'load-path "~/.emacs.d/plugins/arvid-google-translate")
 
 (require 'url)
 (require 'url-http)
@@ -23,8 +25,25 @@
 (defvar agt-timer-ref nil
   "Old window configuration")
 
-(defvar agt-async-buffer 'nil
+(defvar agt-async-buffer nil
   "Buffer that stores the temporary JSON result for arvid-google-translate.")
+
+;; TODO We can create our own customize types to provide useful
+;; completion here.
+(defgroup agt nil
+  "Customization for arvid-google-translate")
+(defcustom agt-language-source nil
+  "The language code of the source language"
+  :type 'string
+  :group 'agt-google-translate)
+(defcustom agt-language-target nil
+  "The language code of the target language"
+  :type 'string
+  :group 'agt-google-translate)
+(defcustom agt-use-ido nil
+  "Use ido for language selection prompts."
+  :type 'boolean
+  :group 'agt-google-translate)
 
 (defconst agt-google-translate-backend-url
   "http://ajax.googleapis.com/ajax/services/language/translate")
@@ -72,10 +91,15 @@
 
   ;; This stuff can be moved into def-var.
   (define-key agt-mode-map "\C-c\C-q" 'agt-quit)
-  (define-key agt-mode-map "\C-c\C-t" 'agt-translate)
+  (define-key agt-mode-map "\C-j" 'agt-translate)
 
-  (use-local-map agt-mode-map)
-  (add-hook 'after-change-functions 'agt-auto-update nil t))
+  (define-key agt-mode-map "\C-c\C-l" 'agt-read-languages)
+  (define-key agt-mode-map "\C-c\C-s" 'agt-read-language-source)
+  (define-key agt-mode-map "\C-c\C-t" 'agt-read-language-target)
+  (define-key agt-mode-map "\C-c\C-w" 'agt-swap-languages)
+
+
+  (use-local-map agt-mode-map))
 
 (defun agt-auto-update (pos end len)
   ;; (message "update")
@@ -83,7 +107,7 @@
   (let ((text (agt-get-source-buffer-text)))
 	;; TODO should unset timer even though buffer text is empty.
 	(if (not (> (length text) 0))
-		(set-translation-buffer-content "")
+		(agt-set-target-buffer-text "")
 	  (when (and (boundp 'agt-timer-ref) agt-timer-ref)
 		(cancel-timer agt-timer-ref)
 		(setq agt-timer-ref nil))
@@ -95,42 +119,106 @@
 	(set-buffer agt-buffer-source)
 	(buffer-string)))
 
+(defun agt-get-target-buffer-text ()
+  (save-current-buffer
+	(set-buffer agt-buffer-translation)
+	(buffer-string)))
+
 (defun agt-timer-callback ()
   (agt-translate-async
    (agt-get-source-buffer-text)
    'agt-update-translation-buffer-callback
-   "fr"
-   "en"))
+   agt-language-source
+   agt-language-target))
 
 (defun agt-update-translation-buffer-callback (status text)
   ""
-  (set-translation-buffer-content text))
+  (agt-set-target-buffer-text text))
 
-(defun set-translation-buffer-content (content)
+
+(defun agt-set-buffer-text (buffer text)
   ""
   (save-current-buffer
-	(set-buffer agt-buffer-translation)
+	(set-buffer buffer)
+	;; (setq buffer-read-only nil)
 	;; TODO Would using replace substring reduce flickering?
 	(erase-buffer)
-	(insert content)))
+	(insert text)
+	;; (setq buffer-read-only t)
+	))
+(defun agt-set-target-buffer-text (content)
+  (agt-set-buffer-text agt-buffer-translation content))
+(defun agt-set-source-buffer-text (content)
+  (agt-set-buffer-text agt-buffer-source content))
+
+(defun completing-read-language-into-custom (prompt var)
+  (let ((choosen-language (agt-completing-read-language-name prompt)))
+	(customize-save-variable var (agt-get-language-code choosen-language))))
+
+(defun agt-completing-read-language-name (prompt)
+  (if agt-use-ido
+	  (ido-completing-read prompt (agt-get-language-names))
+	(completing-read prompt agt-available-languages)))
+
+
+(defun agt-swap-languages ()
+  (interactive)
+  (let ((old-source agt-language-source)
+		(old-source-text (agt-get-source-buffer-text)))
+
+	;; Switch source and target language.
+	(customize-save-variable 'agt-language-source agt-language-target)
+	(customize-save-variable 'agt-language-target old-source)
+
+	;; Switch source and target text.
+	(agt-set-source-buffer-text (agt-get-target-buffer-text))
+	(agt-set-target-buffer-text old-source-text)))
+
+(defun agt-read-languages ()
+  (interactive)
+  (agt-read-language-source)
+  (agt-read-language-target))
+
+(defun agt-read-language-target ()
+  (interactive)
+  (completing-read-language-into-custom "Target language: " 'agt-language-target))
+
+(defun agt-read-language-source ()
+  (interactive)
+  (completing-read-language-into-custom "Source language: " 'agt-language-source))
 
 (defun agt ()
   "Translate interactively"
   (interactive)
 
-  (setq agt-window-config (current-window-configuration))
-  (setq source-win (split-window (selected-window) (- (window-height) 4)))
-  (setq translation-win (split-window source-win (/ (window-width source-win) 2) t))
+  ;; Get target and source language.
+  (unless (agt-available-language-code agt-language-source)
+	(agt-read-language-source))
+  (unless (agt-available-language-code agt-language-target)
+	(agt-read-language-target))
+  ;; (message (concat agt-language-source " -> " agt-language-target))
 
-  (select-window translation-win)
-  (switch-to-buffer (get-buffer-create agt-buffer-translation))
+  (when (and agt-language-target agt-language-source)
+	;; Store old window configuration
+	(setq agt-window-config (current-window-configuration))
 
-  ;; TODO how to set this and insert at the same time?
-  ;; (setq buffer-read-only t)
+	;; Setup our new windows
+	(setq source-win (split-window (selected-window) (- (window-height) 4)))
+	(setq translation-win (split-window source-win (/ (window-width source-win) 2) t))
 
-  (select-window source-win)
-  (switch-to-buffer (get-buffer-create agt-buffer-source))
-  (agt-mode))
+	;; Setup the translation buffer in the translation window
+	(select-window translation-win)
+	(switch-to-buffer (get-buffer-create agt-buffer-translation))
+	(agt-mode)
+
+	;; TODO how to set this and insert at the same time?
+	;; (setq buffer-read-only t)
+
+	;; Setup the source buffer in the source window
+	(select-window source-win)
+	(switch-to-buffer (get-buffer-create agt-buffer-source))
+	(agt-mode)
+	(add-hook 'after-change-functions 'agt-auto-update nil t)))
 
 ;; Example query:
 ;; http://ajax.googleapis.com/ajax/services/language/translate?v=1.0&q=hello%20world&langpair=en%7Ci
