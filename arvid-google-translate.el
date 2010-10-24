@@ -4,8 +4,12 @@
 ;; idle-ness 2) Only run one request at a time. How to control
 ;; requests?
 ;; TODO Memoize translations
-;; TODO Add settings for controlling languages,
 ;; TODO Display current language target and source language in mode line?
+;; TODO Fails silently when internet is down.
+;; TODO Why store and replace window configuration? Why not just delete both used windows?
+;; TODO Do not store current source and target language in custom variables. Only fetch on load and store on quit.
+;; TODO Write doc-strings ;)
+;; TODO Implement support for auto-recognition of source language.
 
 ;; Remove later
 (add-to-list 'load-path "~/.emacs.d/plugins/arvid-google-translate")
