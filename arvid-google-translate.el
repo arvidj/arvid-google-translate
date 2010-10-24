@@ -37,7 +37,6 @@
 (defconst agt-buffer-translation "*AGT-Translation*"
   "Buffer to use for the AGT translation.")
 
-(setq agt-mode-map (make-sparse-keymap))
 (defvar agt-mode-map (make-sparse-keymap)
   "Keymap used by AGT.")
 
@@ -68,7 +67,7 @@
 
 (define-derived-mode agt-mode nil "Arvid Google Translate"
   "Major mode for interactive google translations."
-  (message "agt-mode")
+  ;; (message "agt-mode")
 
   ;; This stuff can be moved into def-var.
   (define-key agt-mode-map "\C-c\C-q" 'agt-quit)
