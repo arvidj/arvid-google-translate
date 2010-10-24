@@ -8,7 +8,7 @@ Download **arvid-google-translate.el**,
 **arvid-google-translate-languages.el** and **json.el** and put them
 in Emacs load path. Then require it:
 
-   $ git clone git@github.com:arvixx/arvid-google-translate.git ~/.emacs.d
+     $ git clone git@github.com:arvixx/arvid-google-translate.git ~/.emacs.d
 
      (add-to-list 'load-path "~/.emacs.d/arvid-google-translate")
      (require 'arvid-google-translate)
@@ -42,5 +42,6 @@ buffers.
 * A lot of hidden http-buffers are created that are not disposed of
   properly.
 * When I write too fast, I get error messages like this:
-  error in process filter: progn: Selecting deleted buffer
-  error in process filter: Selecting deleted buffer
+
+	   error in process filter: progn: Selecting deleted buffer
+	   error in process filter: Selecting deleted buffer
