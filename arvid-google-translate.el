@@ -1,12 +1,12 @@
 ;; TODO: Set translation to read-only
-;; TODO: Automatically fetch translation
-;; TODO: Restore window configuration after quit
-;; TODO: How to make more stable: 1) Only translate after period of
+;; TODO: How to make more stable:
+;; TODO 1) Only translate after period of
 ;; idle-ness 2) Only run one request at a time. How to control
 ;; requests?
 ;; TODO Memoize translations
 ;; TODO Add settings for controlling languages,
-;; TODO
+;; TODO Display current language target and source language in mode line?
+;; TODO Still trouble with encoding. "Jag het" sv -> fre "J&#39;ai chaud"
 
 
 (require 'url)
@@ -55,6 +55,9 @@
   ;; Kill async buffer if it is still hanging around.
   (when (bufferp agt-async-buffer)
 	(kill-buffer agt-async-buffer))
+
+
+  ;; TODO Save custom setting target / source here instead.
 
   (set-window-configuration agt-window-config))
 
