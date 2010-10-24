@@ -10,6 +10,7 @@
 ;; TODO Do not store current source and target language in custom variables. Only fetch on load and store on quit.
 ;; TODO Write doc-strings ;)
 ;; TODO Implement support for auto-recognition of source language.
+;; TODO Switching languages should re-translate.
 
 ;; Remove later
 (add-to-list 'load-path "~/.emacs.d/plugins/arvid-google-translate")
