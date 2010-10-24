@@ -6,7 +6,6 @@
 ;; TODO Memoize translations
 ;; TODO Add settings for controlling languages,
 ;; TODO Display current language target and source language in mode line?
-;; TODO Still trouble with encoding. "Jag het" sv -> fre "J&#39;ai chaud"
 
 ;; Remove later
 (add-to-list 'load-path "~/.emacs.d/plugins/arvid-google-translate")
@@ -97,8 +96,6 @@
   (define-key agt-mode-map "\C-c\C-s" 'agt-read-language-source)
   (define-key agt-mode-map "\C-c\C-t" 'agt-read-language-target)
   (define-key agt-mode-map "\C-c\C-w" 'agt-swap-languages)
-
-
   (use-local-map agt-mode-map))
 
 (defun agt-auto-update (pos end len)
@@ -260,8 +257,8 @@
   	  )))
 
 (defun decode-entities (str)
-  str)
-  ;; (decode-numerical-entities (decode-string-entities str)))
+  (decode-numerical-entities (decode-string-entities str)))
+
 
 (defun decode-string-entities (str)
   ""
@@ -281,13 +278,12 @@
   "Interprets a string of space-separated numbers as an
 ASCII string"
   (let ((start 0))
-	(while (string-match "&#\\([[:digit:]]\\)+;" string start)
-	  (let (replace (format "%c" (string-to-number (match-string 1))))
-		(setq string (replace-match
-					  (format "%c" (string-to-number match))
-					  nil t string 1))
+	(while (string-match "&#\\([[:digit:]]+\\);" string start)
+	  (let ((whole-match (match-string 0 string))
+			(replace (format "%c" (string-to-number (match-string 1 string)))))
+		(setq string (replace-match replace nil t string))
 		(setq start (+ (match-end 0) (- (length replace)
-										(length search))))))
+										(length whole-match))))))
 	string))
 
 (defun clean-encoded-string (string)
