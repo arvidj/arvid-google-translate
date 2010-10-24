@@ -67,7 +67,6 @@
 (defun agt-quit ()
   ""
   (interactive)
-  (message "quit")
 
   ;; (bury-buffer agt-buffer-source)
   ;; (bury-buffer agt-buffer-translation)
@@ -84,19 +83,11 @@
 
   (set-window-configuration agt-window-config))
 
-(defun agt-translate ()
-  ""
-  (interactive)
-  (message "translate"))
-
 (define-derived-mode agt-mode nil "Arvid Google Translate"
   "Major mode for interactive google translations."
-  ;; (message "agt-mode")
 
-  ;; This stuff can be moved into def-var.
   (define-key agt-mode-map "\C-c\C-q" 'agt-quit)
   (define-key agt-mode-map "\C-j" 'agt-translate)
-
   (define-key agt-mode-map "\C-c\C-l" 'agt-read-languages)
   (define-key agt-mode-map "\C-c\C-s" 'agt-read-language-source)
   (define-key agt-mode-map "\C-c\C-t" 'agt-read-language-target)
@@ -104,8 +95,6 @@
   (use-local-map agt-mode-map))
 
 (defun agt-auto-update (pos end len)
-  ;; (message "update")
-
   (let ((text (agt-get-source-buffer-text)))
 	;; TODO should unset timer even though buffer text is empty.
 	(if (not (> (length text) 0))
@@ -198,7 +187,6 @@
 	(agt-read-language-source))
   (unless (agt-available-language-code agt-language-target)
 	(agt-read-language-target))
-  ;; (message (concat agt-language-source " -> " agt-language-target))
 
   (when (and agt-language-target agt-language-source)
 	;; Store old window configuration
@@ -263,7 +251,6 @@
 
 (defun decode-entities (str)
   (decode-numerical-entities (decode-string-entities str)))
-
 
 (defun decode-string-entities (str)
   ""
