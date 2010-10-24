@@ -12,6 +12,7 @@
 (require 'url)
 (require 'url-http)
 (require 'json)
+(require 'arvid-google-translate-languages)
 
 (defvar agt-mode nil
   "Enables the google translate minor mode")
