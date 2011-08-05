@@ -295,3 +295,4 @@ line-feed (LF) char."
 (defun gsub (what with in)
   (replace-regexp-in-string (regexp-quote what) with in))
 
+(provide 'arvid-google-translate)
